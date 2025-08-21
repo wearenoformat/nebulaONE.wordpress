@@ -1,0 +1,8 @@
+{
+    "recommendations": [
+        "ms-vscode.makefile-tools",
+        "ms-azuretools.vscode-docker",
+        "ms-vscode-remote.remote-containers",
+        "bierner.github-markdown-preview",
+    ]
+}

@@ -1,0 +1,158 @@
+# This GitHub Actions workflow builds to plugin
+# It is triggered by the `Build` workflow_dispatch event
+
+name: CI/CD
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build'
+        required: true
+        default: 'latest'
+
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: "Bulid 🏗️"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v5
+      - name: Build Production
+        id: build
+        run: |
+          make build
+      - name: Upload site artifacts
+        uses: actions/upload-artifact@main
+        with:
+          name: plugin-artifact-v${{ inputs.version }}
+          path: ./build/nebulaONE.zip
+
+  release:
+    name: "Release 📦"
+    runs-on: ubuntu-latest
+    needs: [build]
+    permissions:
+      packages: write
+      contents: write
+      id-token: write
+    environment:
+      name: production
+    steps:
+    - name: 'Create or Update Release'
+      uses: actions/github-script@v7
+      with:
+        script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const repoName = "${{ github.repository }}".split('/')[1];
+            let existingRelease = undefined;
+            try {
+              existingRelease = await github.rest.repos.getReleaseByTag({
+                owner: "${{ github.repository_owner }}",
+                repo: repoName,
+                tag: "v${{ inputs.version }}"
+              });
+            } catch {}
+
+            let releaseId = undefined;
+            let uploadUrl = undefined;
+
+            if (existingRelease?.status === 200) {
+              releaseId = existingRelease.data.id;
+              uploadUrl = existingRelease.data.upload_url;
+
+              await github.rest.repos.updateRelease({
+                owner: "${{ github.repository_owner }}",
+                repo: repoName,
+                release_id: releaseId,
+                body: "**nebulaONE® WordPress Plugin - _Release v${{ inputs.version }}_**",
+                prerelease: true,
+                draft: false,
+              });
+
+              const existingAssets = await github.rest.repos.listReleaseAssets({
+                owner: "${{ github.repository_owner }}",
+                repo: repoName,
+                release_id: releaseId
+              });
+              for (const asset of existingAssets.data) {
+                await github.rest.repos.deleteReleaseAsset({
+                  owner: "${{ github.repository_owner }}",
+                  repo: repoName,
+                  asset_id: asset.id
+                });
+              }
+            } else {
+              const releaseResponse = await github.rest.repos.createRelease({
+                  body: "**nebulaONE® WordPress Plugin - _Release v${{ inputs.version }}_**",
+                  name: "v${{ inputs.version }}",
+                  make_latest: "true",
+                  owner: "${{ github.repository_owner }}",
+                  prerelease: true,
+                  draft: false,
+                  repo: repoName,
+                  target_commitish: "${{ github.sha }}",
+                  tag_name: "v${{ inputs.version }}"
+              });
+              releaseId = releaseResponse.data.id;
+              uploadUrl = releaseResponse.data.upload_url;
+            }
+
+            if (releaseId == undefined) throw new Error("ReleaseID is undefined");
+            if (uploadUrl == undefined) throw new Error("UploadURL is undefined");
+
+            const allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               run_id: '${{ github.run_id }}',
+            });
+
+            const artifactsFolder = path.join(process.env.GITHUB_WORKSPACE, 'artifacts');
+            if (!fs.existsSync(artifactsFolder)) {
+              fs.mkdirSync(artifactsFolder);
+            }
+
+            for (let prefix of ["plugin-artifact-v"]) {
+              const matchArtifact = allArtifacts.data.artifacts.filter((artifact) => {
+                return artifact.name == prefix + "${{ inputs.version }}"
+              })[0];
+              if (!matchArtifact) continue;
+
+              const download = await github.rest.actions.downloadArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: matchArtifact.id,
+                archive_format: 'zip',
+              });
+
+              const filePath = path.join(artifactsFolder, `${prefix}${{ inputs.version }}.zip`);
+              const fileBuffer = Buffer.from(download.data);
+              fs.writeFileSync(filePath, fileBuffer);
+
+              const uploadResponse = await github.rest.repos.uploadReleaseAsset({
+                  url: uploadUrl,
+                  headers: {
+                      "content-length": download.headers['content-length'],
+                      "content-type": download.headers['content-type']
+                  },
+                  data: download.data,
+                  name: prefix + "${{ inputs.version }}.zip",
+                  owner: "${{ github.repository_owner }}",
+                  release_id: releaseId,
+                  repo: repoName
+              });
+            }

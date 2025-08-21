@@ -1,0 +1,31 @@
+{
+  "name": "nebulaONE.ai",
+  "build": {
+    "dockerfile": "devcontainer.Dockerfile",
+    "target": "base",
+    "context": ".."
+  },
+  "containerUser": "vscode",
+  "postStartCommand": "sh ./.devcontainer/post_start.sh",
+  "waitFor": "postStartCommand",
+  "postCreateCommand": "sh ./.devcontainer/post_create.sh",
+  "runArgs": [
+    "--volume=/var/lib/docker",
+    "--privileged"
+  ],
+  "privileged": true,
+  "customizations": {
+    "vscode": {
+      "extensions": [
+      ],
+      "settings": {}
+    }
+  },
+  "containerEnv": {
+  },
+  "secrets": {
+  },
+  "forwardPorts": [],
+  "portsAttributes": {
+  }
+}

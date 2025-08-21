@@ -1,0 +1,36 @@
+# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    open-pull-requests-limit: 1
+    commit-message:
+      prefix: "Github Actions - "
+    directory: ./.github/workflows/
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/New_York"
+    groups:
+      actions:
+        patterns:
+          - "*"
+    reviewers:
+      - "cf-dlangston"
+
+  - package-ecosystem: "devcontainers"
+    open-pull-requests-limit: 1
+    commit-message:
+      prefix: "Dev Container - "
+    directory: ./.devcontainer
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/New_York"
+    groups:
+      devcontainers:
+        patterns:
+          - "*"
+    reviewers:
+      - "cf-dlangston"
