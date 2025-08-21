@@ -52,6 +52,14 @@ function nebulaone_embed_settings_page()
                     <th scope="row">Align button to left <span class="nebulaone-help" data-help="Check this box to align the chat button to the left side of the screen.">?</span></th>
                     <td><input type="checkbox" name="nebulaone_use_alt_script" <?php echo $terms_accepted ? '' : 'disabled'; ?> value="1" <?php checked(1, get_option('nebulaone_use_alt_script'), true); ?> /></td>
                 </tr>
+                <tr valign="top">
+                    <th scope="row">Show Model Name <span class="nebulaone-help" data-help="Show the AI model name in the chat interface. Default is enabled.">?</span></th>
+                    <td><input type="checkbox" name="nebulaone_show_model_name" <?php echo $terms_accepted ? '' : 'disabled'; ?> value="1" <?php checked(1, get_option('nebulaone_show_model_name', 1), true); ?> /></td>
+                </tr>
+                <tr valign="top">
+                    <th scope="row">Show Disclaimer <span class="nebulaone-help" data-help="Show the disclaimer in the chat interface. Default is enabled.">?</span></th>
+                    <td><input type="checkbox" name="nebulaone_show_disclaimer" <?php echo $terms_accepted ? '' : 'disabled'; ?> value="1" <?php checked(1, get_option('nebulaone_show_disclaimer', 1), true); ?> /></td>
+                </tr>
             </table>
             <?php submit_button(null, 'primary', 'submit', $terms_accepted ? false : true); ?>
         </form>
@@ -137,6 +145,8 @@ function nebulaone_embed_register_settings()
     register_setting('nebulaone-embed-settings-group', 'nebulaone_gpt_system');
     register_setting('nebulaone-embed-settings-group', 'nebulaone_title');
     register_setting('nebulaone-embed-settings-group', 'nebulaone_use_alt_script');
+    register_setting('nebulaone-embed-settings-group', 'nebulaone_show_model_name');
+    register_setting('nebulaone-embed-settings-group', 'nebulaone_show_disclaimer');
 }
 // Hooks the registration function to the 'admin_init' action.
 add_action('admin_init', 'nebulaone_embed_register_settings');
@@ -150,6 +160,8 @@ function nebulaone_embed_script()
         $gpt_system = esc_js(get_option('nebulaone_gpt_system'));
         $title = esc_js(get_option('nebulaone_title'));
         $use_alt_script = get_option('nebulaone_use_alt_script');
+        $show_model_name = get_option('nebulaone_show_model_name', 1);
+        $show_disclaimer = get_option('nebulaone_show_disclaimer', 1);
 
         // Checks if all required options are set.
         if ($host_name && $gpt_system && $title) {
@@ -163,7 +175,9 @@ function nebulaone_embed_script()
             const nebulaInstance = {
                 hostName: '$host_name',
                 gptSystem: '$gpt_system',
-                title: '$title'
+                title: '$title',
+                showModelName: " . ($show_model_name ? 'true' : 'false') . ",
+                showDisclaimer: " . ($show_disclaimer ? 'true' : 'false') . "
             };
             ";
             // Adds the inline script to be executed before the main script.
