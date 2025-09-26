@@ -1,0 +1,54 @@
+.nebulaone-help {
+    cursor: pointer;
+    color: #0073aa;
+    margin-left: 5px;
+}
+.nebulaone-help:hover {
+    text-decoration: underline;
+}
+.nebulaone-help-tooltip {
+    display: none;
+    position: absolute;
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    z-index: 1000;
+    max-width: 300px; /* Added for better readability */
+    word-wrap: break-word; /* Ensure long text wraps */
+}
+
+/* Modal Basic Styling */
+#nebulaone-terms-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    padding: 20px;
+    border: 1px solid #ddd;
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    z-index: 9999; /* Higher than other elements */
+    width: 80%;
+    max-width: 800px;
+    max-height: 90%;
+    overflow-y: auto;
+}
+#nebulaone-terms-modal h2 {
+    margin-top: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+#nebulaone-terms-modal button {
+    margin-top: 20px;
+}
+
+
+/* Settings table */
+.nebulaOne-settings-table {
+    padding-bottom: 60px; margin-bottom: 20px;
+    border-bottom: 1px solid #fff;
+}
+.nebulaOne-settings-table input[type="text"] {
+    min-width: 230px;
+}
